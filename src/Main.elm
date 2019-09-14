@@ -22,14 +22,14 @@ init : ( Model, Cmd Msg )
 init =
     ( {pressedKeys = [], playerLocation = (1,1), grid = grid}, Cmd.none )
 
-type Piece = Wall | Player | OpenSpace
+type Piece = Wall | Player | OpenSpace | Food
 
 type alias Grid = Array (Array Piece)
 
 grid : Grid
 grid = fromList <| List.map fromList gridSource
 
-gridSource = [[Wall, Wall, Wall], [Wall, Player, OpenSpace]]
+gridSource = [[Wall, Wall, Wall, Food], [Wall, Player, OpenSpace, Food]]
 
 ---- UPDATE ----
 
@@ -38,6 +38,7 @@ pieceToChar p = case p of
     Wall -> "☐"
     Player -> "P"
     OpenSpace -> "O"
+    Food -> "F"
 
 type Msg
     = KeyMsg Keyboard.Msg
