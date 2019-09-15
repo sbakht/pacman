@@ -27,11 +27,13 @@ type Piece = SolidPiece SolidPiece | TraversablePiece TraversablePiece | AlivePi
 
 type SolidPiece = Wall
 type TraversablePiece = OpenSpace | Food | HiddenWall
-type AlivePiece = Player
+type AlivePiece = Player | BasicGrunt Int
 
 type alias Grid = Array (Array Cell)
 
 type alias Cell = (Piece, Maybe AlivePiece)
+
+type Velocity = Up | Down | Left | Right | NoDirection
 
 grid : Grid
 grid = fromList <| List.map fromList (mkGrid gridSource)
@@ -44,14 +46,19 @@ WWWWWWWWWWW
 FFFWFFFFFFW
 FFFWFFFFFFW
 FFFHFFFFFFW
-WWWWFFFFFFW
+WWWWFFF1FFW
 OOOPFFFFFFW
 """
 
+-- Used to translate string to grid
 charToPiece : Char -> Piece
 charToPiece c = case c of
     'W' -> SolidPiece Wall
     'P' -> AlivePiece Player
+    '1' -> AlivePiece <| BasicGrunt 1
+    '2' -> AlivePiece <| BasicGrunt 2
+    '3' -> AlivePiece <| BasicGrunt 3
+    '4' -> AlivePiece <| BasicGrunt 4
     'O' -> TraversablePiece OpenSpace
     'F' -> TraversablePiece Food
     'H' -> TraversablePiece HiddenWall
@@ -64,10 +71,16 @@ pieceToCell p = case p of
 
 ---- UPDATE ----
 
+-- Used to build visual ui
 pieceToChar : Piece -> String
 pieceToChar p = case p of
     SolidPiece Wall -> "☐"
     AlivePiece Player -> "P"
+    AlivePiece (BasicGrunt 1) -> "1"
+    AlivePiece (BasicGrunt 2) -> "2"
+    AlivePiece (BasicGrunt 3) -> "3"
+    AlivePiece (BasicGrunt 4) -> "4"
+    AlivePiece (BasicGrunt _) -> "1"
     TraversablePiece OpenSpace -> "O"
     TraversablePiece Food -> "F"
     TraversablePiece HiddenWall -> "☐"
@@ -90,22 +103,22 @@ update msg model =
                 pressedKeys = Keyboard.update keyMsg model.pressedKeys
 
 
-                possibleDestination : Point
+                possibleDestination : { point : Point, velocity: Velocity}
                 possibleDestination = case Keyboard.Arrows.wasdDirection pressedKeys of
-                    Keyboard.Arrows.North -> mvLocUp model.playerLocation
-                    Keyboard.Arrows.East -> mvLocRight model.playerLocation
-                    Keyboard.Arrows.South -> mvLocDown model.playerLocation
-                    Keyboard.Arrows.West -> mvLocLeft model.playerLocation
-                    _ -> model.playerLocation
+                    Keyboard.Arrows.North -> {point = mvLocUp model.playerLocation, velocity = Up}
+                    Keyboard.Arrows.East -> {point = mvLocRight model.playerLocation, velocity = Right}
+                    Keyboard.Arrows.South -> {point = mvLocDown model.playerLocation, velocity = Down}
+                    Keyboard.Arrows.West -> {point = mvLocLeft model.playerLocation, velocity = Left}
+                    _ -> {point = model.playerLocation, velocity = NoDirection}
 
                 validMove : Bool
-                validMove = isValidMove (AlivePiece Player) (mbGetPiece possibleDestination model.grid)
+                validMove = isValidMove possibleDestination.velocity (AlivePiece Player) (mbGetPiece possibleDestination.point model.grid)
 
-                newGrid = mkValidMove model.playerLocation possibleDestination (AlivePiece Player) model.grid
+                newGrid = mkValidMove possibleDestination.velocity model.playerLocation possibleDestination.point (AlivePiece Player) model.grid
             in
                 (
                     if validMove then
-                        { model | pressedKeys = pressedKeys, grid = newGrid, playerLocation = possibleDestination}
+                        { model | pressedKeys = pressedKeys, grid = newGrid, playerLocation = possibleDestination.point}
                     else
                         { model | pressedKeys = pressedKeys, grid = newGrid}
                 , Cmd.none
@@ -195,18 +208,20 @@ mbGetPiece (x,y) gr =
         Nothing ->
             Nothing
 
-mkValidMove : Point -> Point -> Piece -> Grid -> Grid
-mkValidMove origin destination piece gr = if isValidMove piece (mbGetPiece destination gr) then
+mkValidMove : Velocity -> Point -> Point -> Piece -> Grid -> Grid
+mkValidMove velocity origin destination piece gr = if isValidMove velocity piece (mbGetPiece destination gr) then
         mvPiece origin destination piece gr
     else
         gr
 
-
-
-isValidMove : Piece -> Maybe Cell -> Bool
-isValidMove p1 p2 = case p2 of
-    Nothing -> False
+isValidMove : Velocity -> Piece -> Maybe Cell -> Bool
+isValidMove velocity p1 p2 = case p2 of
     Just (SolidPiece _, _) -> False
+    Just (AlivePiece (BasicGrunt 1), _) -> velocity /= Down
+    Just (AlivePiece (BasicGrunt 2), _) -> velocity /= Left
+    Just (AlivePiece (BasicGrunt 3), _) -> velocity /= Up
+    Just (AlivePiece (BasicGrunt 4), _) -> velocity /= Right
+    Nothing -> False
     _ -> True
 
 
