@@ -23,11 +23,15 @@ init : ( Model, Cmd Msg )
 init =
     ( {pressedKeys = [], playerLocation = (3,5), grid = grid}, Cmd.none )
 
-type Piece = Wall | Player | OpenSpace | Food | HiddenWall
+type Piece = SolidPiece SolidPiece | TraversablePiece TraversablePiece | AlivePiece AlivePiece
+
+type SolidPiece = Wall
+type TraversablePiece = OpenSpace | Food | HiddenWall
+type AlivePiece = Player
 
 type alias Grid = Array (Array Cell)
 
-type alias Cell = (Piece, Maybe Piece)
+type alias Cell = (Piece, Maybe AlivePiece)
 
 grid : Grid
 grid = fromList <| List.map fromList (mkGrid gridSource)
@@ -46,36 +50,32 @@ OOOPFFFFFFW
 
 charToPiece : Char -> Piece
 charToPiece c = case c of
-    'W' -> Wall
-    'P' -> Player
-    'O' -> OpenSpace
-    'F' -> Food
-    'H' -> HiddenWall
-    _ -> Wall
+    'W' -> SolidPiece Wall
+    'P' -> AlivePiece Player
+    'O' -> TraversablePiece OpenSpace
+    'F' -> TraversablePiece Food
+    'H' -> TraversablePiece HiddenWall
+    _ -> SolidPiece Wall
 
 pieceToCell : Piece -> Cell
 pieceToCell p = case p of
-    Player -> (OpenSpace, Just Player)
+    AlivePiece Player -> (TraversablePiece OpenSpace, Just Player)
     _ -> (p, Nothing)
 
 ---- UPDATE ----
 
 pieceToChar : Piece -> String
 pieceToChar p = case p of
-    Wall -> "☐"
-    Player -> "P"
-    OpenSpace -> "O"
-    Food -> "F"
-    HiddenWall -> "☐"
+    SolidPiece Wall -> "☐"
+    AlivePiece Player -> "P"
+    TraversablePiece OpenSpace -> "O"
+    TraversablePiece Food -> "F"
+    TraversablePiece HiddenWall -> "☐"
 
 cellToChar : Cell -> String
 cellToChar cell = case cell of
     (_, Just Player) -> "P"
-    (Wall, _) -> "☐"
-    (Player, _) -> "P"
-    (OpenSpace, _) -> "O"
-    (Food, _) -> "F"
-    (HiddenWall, _) -> "☐"
+    (x,_) -> pieceToChar x
 
 type Msg
     = KeyMsg Keyboard.Msg
@@ -99,9 +99,9 @@ update msg model =
                     _ -> model.playerLocation
 
                 validMove : Bool
-                validMove = isValidMove Player (mbGetPiece possibleDestination model.grid)
+                validMove = isValidMove (AlivePiece Player) (mbGetPiece possibleDestination model.grid)
 
-                newGrid = mkValidMove model.playerLocation possibleDestination Player model.grid
+                newGrid = mkValidMove model.playerLocation possibleDestination (AlivePiece Player) model.grid
             in
                 (
                     if validMove then
@@ -138,7 +138,7 @@ mvLocDown (x,y) = case y == (gHeight - 1) of
 
 setPiece : Point -> Piece -> Grid -> Grid
 setPiece (x,y) piece gr = case piece of
-    Player ->
+    AlivePiece Player ->
         setPlayerPiece (x,y) gr
     _ -> case Array.get x gr of
         Just oldInner ->
@@ -183,9 +183,9 @@ setWalkedCell (x,y) gr = case Array.get x gr of
 
 mkWalkedPiece : Maybe Cell -> Piece
 mkWalkedPiece mbCell = case mbCell of
-    Just (HiddenWall, _) -> HiddenWall
-    Just _ -> OpenSpace
-    Nothing -> OpenSpace
+    Just (TraversablePiece HiddenWall, _) -> TraversablePiece HiddenWall
+    Just _ -> TraversablePiece OpenSpace
+    Nothing -> TraversablePiece OpenSpace
 
 mbGetPiece : Point -> Grid -> Maybe Cell
 mbGetPiece (x,y) gr =
@@ -206,7 +206,7 @@ mkValidMove origin destination piece gr = if isValidMove piece (mbGetPiece desti
 isValidMove : Piece -> Maybe Cell -> Bool
 isValidMove p1 p2 = case p2 of
     Nothing -> False
-    Just (Wall, Nothing) -> False
+    Just (SolidPiece _, _) -> False
     _ -> True
 
 
