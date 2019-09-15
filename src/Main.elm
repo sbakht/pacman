@@ -244,7 +244,7 @@ viewGridColumn : Array Cell -> Html Msg
 viewGridColumn = div [class "grid-column"] << Array.toList << Array.map (viewPiece)
 
 viewPiece : Cell -> Html Msg
-viewPiece cell = span [] [text (cellToChar cell)]
+viewPiece cell = span [class ("c" ++ cellToChar cell)] [text (cellToChar cell)]
 
 ---- PROGRAM ----
 

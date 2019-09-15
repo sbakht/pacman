@@ -26,3 +26,16 @@ img {
     display: block;
     padding: 8px;
 }
+
+.cP {
+    color: green;
+    font-weight: bold;
+}
+
+.c1, .c2, .c3, .c4 {
+    color: red;
+}
+
+.cO {
+    color: #eee;
+}
