@@ -25,13 +25,15 @@ init =
 
 type Piece = Wall | Player | OpenSpace | Food | HiddenWall
 
-type alias Grid = Array (Array Piece)
+type alias Grid = Array (Array Cell)
+
+type alias Cell = (Piece, Maybe Piece)
 
 grid : Grid
 grid = fromList <| List.map fromList (mkGrid gridSource)
 
-mkGrid : String -> List (List Piece)
-mkGrid str = List.foldr (List.map2 (\a b -> charToPiece a :: b) ) (List.repeat gWidth []) (List.map String.toList <| String.lines str)
+mkGrid : String -> List (List Cell)
+mkGrid str = List.foldr (List.map2 (\a b -> (pieceToCell <| charToPiece a) :: b) ) (List.repeat gWidth []) (List.map String.toList <| String.lines str)
 
 gridSource = String.dropRight 1 <| String.dropLeft 1 <| """
 WWWWWWWWWWW
@@ -51,6 +53,11 @@ charToPiece c = case c of
     'H' -> HiddenWall
     _ -> Wall
 
+pieceToCell : Piece -> Cell
+pieceToCell p = case p of
+    Player -> (OpenSpace, Just Player)
+    _ -> (p, Nothing)
+
 ---- UPDATE ----
 
 pieceToChar : Piece -> String
@@ -60,6 +67,15 @@ pieceToChar p = case p of
     OpenSpace -> "O"
     Food -> "F"
     HiddenWall -> "☐"
+
+cellToChar : Cell -> String
+cellToChar cell = case cell of
+    (_, Just Player) -> "P"
+    (Wall, _) -> "☐"
+    (Player, _) -> "P"
+    (OpenSpace, _) -> "O"
+    (Food, _) -> "F"
+    (HiddenWall, _) -> "☐"
 
 type Msg
     = KeyMsg Keyboard.Msg
@@ -121,20 +137,57 @@ mvLocDown (x,y) = case y == (gHeight - 1) of
     False -> (x, y + 1)
 
 setPiece : Point -> Piece -> Grid -> Grid
-setPiece (x,y) piece gr =
-    case Array.get x gr of
+setPiece (x,y) piece gr = case piece of
+    Player ->
+        setPlayerPiece (x,y) gr
+    _ -> case Array.get x gr of
         Just oldInner ->
             let
-                newInner = Array.set y piece oldInner
+                newInner = Array.set y (piece, Nothing) oldInner
             in
                 Array.set x newInner gr
         Nothing ->
            gr
 
-mvPiece : Point -> Point -> Piece -> Grid -> Grid
-mvPiece (x1,y1) (x2,y2) piece gr = setPiece (x2,y2) piece <| setPiece (x1,y1) OpenSpace gr
+setPlayerPiece : Point -> Grid -> Grid
+setPlayerPiece (x,y) gr =
+    case Array.get x gr of
+        Just oldInner ->
+            case Array.get y oldInner of
+                Just (piece, _) ->
+                    let
+                        newInner = Array.set y (piece, Just Player) oldInner
+                    in
+                        Array.set x newInner gr
+                Nothing ->
+                    gr
+        Nothing ->
+           gr
 
-mbGetPiece : Point -> Grid -> Maybe Piece
+mvPiece : Point -> Point -> Piece -> Grid -> Grid
+mvPiece (x1,y1) (x2,y2) piece gr = setPiece (x2,y2) piece <| setPiece (x1,y1) (mkWalkedPiece <| mbGetPiece (x1,y1) gr) gr
+
+setWalkedCell : Point -> Grid -> Grid
+setWalkedCell (x,y) gr = case Array.get x gr of
+        Just oldInner ->
+            case Array.get y oldInner of
+                Just (piece, _) ->
+                    let
+                        newInner = Array.set y (piece, Just Player) oldInner
+                    in
+                        Array.set x newInner gr
+                Nothing ->
+                    gr
+        Nothing ->
+           gr
+
+mkWalkedPiece : Maybe Cell -> Piece
+mkWalkedPiece mbCell = case mbCell of
+    Just (HiddenWall, _) -> HiddenWall
+    Just _ -> OpenSpace
+    Nothing -> OpenSpace
+
+mbGetPiece : Point -> Grid -> Maybe Cell
 mbGetPiece (x,y) gr =
     case Array.get x gr of
         Just inner ->
@@ -150,10 +203,10 @@ mkValidMove origin destination piece gr = if isValidMove piece (mbGetPiece desti
 
 
 
-isValidMove : Piece -> Maybe Piece -> Bool
+isValidMove : Piece -> Maybe Cell -> Bool
 isValidMove p1 p2 = case p2 of
     Nothing -> False
-    Just Wall -> False
+    Just (Wall, Nothing) -> False
     _ -> True
 
 
@@ -172,11 +225,11 @@ view model =
 viewGrid : Grid -> Html Msg
 viewGrid =  div [class "grid" ] << Array.toList << Array.map (viewGridColumn)
 
-viewGridColumn : Array Piece -> Html Msg
+viewGridColumn : Array Cell -> Html Msg
 viewGridColumn = div [class "grid-column"] << Array.toList << Array.map (viewPiece)
 
-viewPiece : Piece -> Html Msg
-viewPiece p = span [] [text (pieceToChar p)]
+viewPiece : Cell -> Html Msg
+viewPiece cell = span [] [text (cellToChar cell)]
 
 ---- PROGRAM ----
 
