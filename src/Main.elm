@@ -7,8 +7,9 @@ import Array exposing (Array, fromList)
 import Keyboard exposing (Key(..))
 import Keyboard.Arrows
 
-gWidth = List.length gridSource
-gHeight = List.length <| Maybe.withDefault [] (List.head gridSource)
+gWidth: Int
+gWidth = Maybe.withDefault 0 <| List.maximum <| List.map String.length (String.lines gridSource)
+gHeight = List.length <| String.lines gridSource
 
 
 ---- MODEL ----
@@ -20,16 +21,34 @@ type alias Model =
 
 init : ( Model, Cmd Msg )
 init =
-    ( {pressedKeys = [], playerLocation = (1,1), grid = grid}, Cmd.none )
+    ( {pressedKeys = [], playerLocation = (3,5), grid = grid}, Cmd.none )
 
 type Piece = Wall | Player | OpenSpace | Food
 
 type alias Grid = Array (Array Piece)
 
 grid : Grid
-grid = fromList <| List.map fromList gridSource
+grid = fromList <| List.map fromList (mkGrid gridSource)
 
-gridSource = [[Wall, Wall, Wall, Food], [Wall, Player, OpenSpace, Food]]
+mkGrid : String -> List (List Piece)
+mkGrid str = List.foldr (List.map2 (\a b -> charToPiece a :: b) ) (List.repeat gWidth []) (List.map String.toList <| String.lines str)
+
+gridSource = String.dropRight 1 <| String.dropLeft 1 <| """
+WWWWWWWWWW
+FFFWFFFFFF
+FFFWFFFFFF
+FFFWFFFFFF
+WWWWFFFFFF
+OOOPFFFFFF
+"""
+
+charToPiece : Char -> Piece
+charToPiece c = case c of
+    'W' -> Wall
+    'P' -> Player
+    'O' -> OpenSpace
+    'F' -> Food
+    _ -> Wall
 
 ---- UPDATE ----
 
