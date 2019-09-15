@@ -34,12 +34,12 @@ mkGrid : String -> List (List Piece)
 mkGrid str = List.foldr (List.map2 (\a b -> charToPiece a :: b) ) (List.repeat gWidth []) (List.map String.toList <| String.lines str)
 
 gridSource = String.dropRight 1 <| String.dropLeft 1 <| """
-WWWWWWWWWW
-FFFWFFFFFF
-FFFWFFFFFF
-FFFWFFFFFF
-WWWWFFFFFF
-OOOPFFFFFF
+WWWWWWWWWWW
+FFFWFFFFFFW
+FFFWFFFFFFW
+FFFWFFFFFFW
+WWWWFFFFFFW
+OOOPFFFFFFW
 """
 
 charToPiece : Char -> Piece

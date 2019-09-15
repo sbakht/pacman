@@ -1,5 +1,5 @@
 body {
-  font-family: 'Source Sans Pro', 'Trebuchet MS', 'Lucida Grande', 'Bitstream Vera Sans', 'Helvetica Neue', sans-serif;
+  font-family: cursive;
   margin: 0;
   text-align: center;
   color: #293c4b;
@@ -24,4 +24,5 @@ img {
 
 .grid span {
     display: block;
+    padding: 8px;
 }
