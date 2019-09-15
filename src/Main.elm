@@ -23,7 +23,7 @@ init : ( Model, Cmd Msg )
 init =
     ( {pressedKeys = [], playerLocation = (3,5), grid = grid}, Cmd.none )
 
-type Piece = Wall | Player | OpenSpace | Food
+type Piece = Wall | Player | OpenSpace | Food | HiddenWall
 
 type alias Grid = Array (Array Piece)
 
@@ -37,7 +37,7 @@ gridSource = String.dropRight 1 <| String.dropLeft 1 <| """
 WWWWWWWWWWW
 FFFWFFFFFFW
 FFFWFFFFFFW
-FFFWFFFFFFW
+FFFHFFFFFFW
 WWWWFFFFFFW
 OOOPFFFFFFW
 """
@@ -48,6 +48,7 @@ charToPiece c = case c of
     'P' -> Player
     'O' -> OpenSpace
     'F' -> Food
+    'H' -> HiddenWall
     _ -> Wall
 
 ---- UPDATE ----
@@ -58,6 +59,7 @@ pieceToChar p = case p of
     Player -> "P"
     OpenSpace -> "O"
     Food -> "F"
+    HiddenWall -> "☐"
 
 type Msg
     = KeyMsg Keyboard.Msg
