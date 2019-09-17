@@ -40,12 +40,43 @@ test('cant move into walls', () => {
   expect(isValidMove(foodLoc, grid)).toBe(true);
 });
 
-test('should move player', () => {
+test('should move player onto moveable spaces', () => {
   const Actions = index.Actions;
   const playerLocation = index.mkLocation(1,1);
-
   const grid = [[Piece.Wall, Piece.Food],[Piece.Wall, Piece.Player]];
-  const grid1 = Actions.mvPlayerLeft(playerLocation, grid);
 
-  expect(grid1).toEqual([[Piece.Wall, Piece.Player],[Piece.Wall, Piece.OpenSpace]]);
+  const initModel = {
+    playerLocation,
+    grid,
+  };
+
+  const model1 = Actions.mvPlayerLeft(initModel);
+  const model2 = Actions.mvPlayerRight(model1);
+
+  expect(model1.grid).toEqual([[Piece.Wall, Piece.Player],[Piece.Wall, Piece.OpenSpace]]);
+  expect(model1.playerLocation).toEqual({x: 0, y: 1});
+
+  expect(model2.grid).toEqual([[Piece.Wall, Piece.OpenSpace],[Piece.Wall, Piece.Player]]);
+  expect(model2.playerLocation).toEqual({x: 1, y: 1});
+});
+
+test('should not be able to go out of bounds', () => {
+  const Actions = index.Actions;
+  const playerLocation = index.mkLocation(1,1);
+  const grid = [[Piece.OpenSpace, Piece.OpenSpace],[Piece.OpenSpace, Piece.Player]];
+
+  const initModel = {
+    playerLocation,
+    grid,
+  };
+
+  const rightBound = Actions.mvPlayerRight(initModel);
+  const downBound = Actions.mvPlayerDown(initModel);
+  const leftBound = Actions.mvPlayerLeft(Actions.mvPlayerLeft(initModel));
+  const upBound = Actions.mvPlayerUp(Actions.mvPlayerUp(initModel));
+
+  expect(rightBound).toEqual(initModel);
+  expect(downBound).toEqual(initModel);
+  expect(leftBound).toEqual({playerLocation: {x: 0, y: 1}, grid: [[Piece.OpenSpace, Piece.Player], [Piece.OpenSpace, Piece.OpenSpace]]});
+  expect(upBound).toEqual({playerLocation: {x: 1, y: 0}, grid: [[Piece.OpenSpace, Piece.OpenSpace], [Piece.Player, Piece.OpenSpace]]});
 });

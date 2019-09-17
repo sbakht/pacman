@@ -1,3 +1,6 @@
+function clone(data) {
+  return JSON.parse(JSON.stringify(data));
+}
 
 const Piece = {
     Wall: "Wall",
@@ -38,19 +41,42 @@ function mvLocation({x, y}, direction) {
 
 // isValidMove: Location -> Grid -> Bool
 function isValidMove(destination, grid) {
+  const gridWidth = grid.length;
+  const gridHeight = grid[0].length;
+  if(destination.x < 0 || destination.x >= grid.length || destination.y < 0 || destination.y >= gridHeight) {
+    return false;
+  }
   return getPiece(destination, grid) !== Piece.Wall
 }
 
-function mvPiece(source, destination, grid) {
+function mvPiece(source, destination, oldGrid) {
+  const grid = clone(oldGrid);
   grid[source.x][source.y] = Piece.OpenSpace;
   grid[destination.x][destination.y] = Piece.Player;
   return grid
 }
 
+function mvPlayer({playerLocation, grid}, direction) {
+  const destination = mvLocation(playerLocation, direction);
+  if(isValidMove(destination, grid)) {
+    return {playerLocation: destination, grid: mvPiece(playerLocation, destination, grid)}
+  }
+  return {playerLocation, grid};
+}
+
 const Actions = {
-  mvPlayerLeft: function (playerLocation, grid) {
-    const destination = mvLocation(playerLocation, Direction.Left);
-    return mvPiece(playerLocation, destination, grid)
+  // mvPlayerLeft -> Model -> Model
+  mvPlayerLeft: function (model) {
+    return mvPlayer(model, Direction.Left)
+  },
+  mvPlayerRight: function (model) {
+    return mvPlayer(model, Direction.Right)
+  },
+  mvPlayerUp: function (model) {
+    return mvPlayer(model, Direction.Up)
+  },
+  mvPlayerDown: function (model) {
+    return mvPlayer(model, Direction.Down)
   }
 }
 
