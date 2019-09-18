@@ -91,18 +91,21 @@ test('should not be able to go out of bounds', () => {
   expect(upBound).toEqual(initModel);
 });
 
-//test('should not be able to go out of bounds', () => {
-//  const Actions = index.Actions;
-//  const playerLocation = index.mkLocation(0,0);
-//  const grid = [[Piece.Player, Piece.HiddenWall, Piece.OpenSpace]];
-//
-//  const initModel = {
-//    playerLocation,
-//    grid,
-//  };
-//
-//  const model = Actions.mvPlayerDown(Actions.mvPlayerDown(initModel));
-//
-//  expect(model.grid).toEqual([[Piece.OpenSpace, Piece.HiddenWall, Piece.Player]]);
-//  expect(model.playerLocation).toEqual({x: 0, y: 2})
-//});
+test('should not be able to go out of bounds', () => {
+  const Actions = index.Actions;
+  const playerLocation = index.mkLocation(0,0);
+  const grid = [[playerOn(Piece.OpenSpace), nuller(Piece.HiddenWall), nuller(Piece.OpenSpace)]];
+
+  const initModel = {
+    playerLocation,
+    grid,
+  };
+
+  const model1 = Actions.mvPlayerDown(initModel);
+  const model2 = Actions.mvPlayerDown(Actions.mvPlayerDown(initModel));
+
+  expect(model1.grid).toEqual([[nuller(Piece.OpenSpace), playerOn(Piece.HiddenWall), nuller(Piece.OpenSpace)]]);
+  expect(model1.playerLocation).toEqual({x: 0, y: 1})
+  expect(model2.grid).toEqual([[nuller(Piece.OpenSpace), nuller(Piece.HiddenWall), playerOn(Piece.OpenSpace)]]);
+  expect(model2.playerLocation).toEqual({x: 0, y: 2})
+});

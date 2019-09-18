@@ -52,7 +52,12 @@ function isValidMove(destination, grid) {
 
 function mvPiece(source, destination, oldGrid) {
   const grid = clone(oldGrid);
-  grid[source.x][source.y] = {piece: Piece.OpenSpace, alive: null};
+  const sourceCell = grid[source.x][source.y];
+  if(sourceCell.piece === Piece.HiddenWall) {
+      sourceCell.alive = null;
+  }else{
+      grid[source.x][source.y] = {piece: Piece.OpenSpace, alive: null};
+  }
   grid[destination.x][destination.y].alive = Piece.Player;
   return grid
 }
