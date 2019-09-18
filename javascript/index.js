@@ -7,6 +7,7 @@ const Piece = {
     Food: "Food",
     Player: "Player",
     OpenSpace: "OpenSpace",
+    HiddenWall: "HiddenWall",
 };
 
 // mkLocation: Int -> Int -> Location
@@ -46,13 +47,13 @@ function isValidMove(destination, grid) {
   if(destination.x < 0 || destination.x >= grid.length || destination.y < 0 || destination.y >= gridHeight) {
     return false;
   }
-  return getPiece(destination, grid) !== Piece.Wall
+  return getPiece(destination, grid).piece !== Piece.Wall
 }
 
 function mvPiece(source, destination, oldGrid) {
   const grid = clone(oldGrid);
-  grid[source.x][source.y] = Piece.OpenSpace;
-  grid[destination.x][destination.y] = Piece.Player;
+  grid[source.x][source.y] = {piece: Piece.OpenSpace, alive: null};
+  grid[destination.x][destination.y].alive = Piece.Player;
   return grid
 }
 
@@ -80,6 +81,11 @@ const Actions = {
   }
 }
 
+function toCells(grid) {
+    const grid1 = grid.map(xs => xs.map(x => ({piece: x, alive: null})))
+    return grid1;
+}
+
 module.exports = {
     Piece,
     Direction,
@@ -89,4 +95,5 @@ module.exports = {
     isValidMove,
     mvPiece,
     Actions,
+    toCells,
 }
